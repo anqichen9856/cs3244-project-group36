@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 
 # A_F = pd.read_csv('feature_ABCDEF.csv')
 # G_I = pd.read_csv('feature_GHI.csv')
@@ -16,14 +17,12 @@ import pandas as pd
 # df_shuffled = df.sample(frac=1)
 # df_shuffled.to_csv('data_combined_cleaned_shuffled.csv', index=False)
 
-df = pd.read_csv('data_combined_cleaned_shuffled.csv')
-l = len(df)
-l_training = round(l*0.7)
-l_validation = round(l*0.2)
+df = pd.read_csv('data_intermediate/data_combined_cleaned_shuffled.csv')
+df['price_per_sqm'] = df['resale_price'] / df['floor_area_sqm']
+
+l_training = round(len(df) * 0.8)
 training = df.iloc[:l_training]
-validation = df.iloc[l_training:(l_training + l_validation)]
-test = df.iloc[(l_training + l_validation):]
+test = df.iloc[l_training:]
 
 training.to_csv('training_data.csv', index=False)
-validation.to_csv('validation_data.csv', index=False)
 test.to_csv('test_data.csv', index=False)
