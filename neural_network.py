@@ -37,6 +37,28 @@ def build_model():
     model.compile(loss='mse', optimizer='adam', metrics=['mse','mae'])
     return model
 
+def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):
+    cv = RepeatedKFold(n_splits=5, n_repeats=1, random_state=0)
+    cvscores = []
+    for train, test in cv.split(X_train,y_train):
+        model = build_model()
+        result = model.fit(X_train[train], y_train[train], epochs=100, batch_size = len(X_train[train]), verbose=1, shuffle=False)
+        val_res = scaler_y.inverse_transform(model.predict(X_train[test]))
+        # print(val_res[0:10], labels[test][0:10])
+        # print(floor_area)
+        score = get_score(val_res * floor_area[test], total_price[test])
+        cvscores.append(score)
+    print('avarage score on cv = {}'.format(sum(cvscores)/len(cvscores)))
+    
+    # for train, test in cv.split(X_train,y_train):
+    #     model = build_model()
+    #     result = model.fit(X_train[train], y_train[train], epochs=100, batch_size = len(X_train[train]), verbose=1, shuffle=False)
+    #     val_res = scaler_y.inverse_transform(predict(X_train[test], model))
+    #     print(val_res[0:10], labels[test][0:10])
+    #     score = get_score(val_res, labels[test])
+    #     cvscores.append(score)
+    
+
 def get_score(y_pred, y_val):
     return mean_squared_error(y_pred/100000, y_val/100000)
 
@@ -55,55 +77,34 @@ def main():
     X_train = preprocessing_X(features)
     scaler_y, y_train = preprocessing_Y(labels)
 
-    # build and train model
-    cv = RepeatedKFold(n_splits=5, n_repeats=1, random_state=0)
-    cvscores = []
-    for train, test in cv.split(X_train,y_train):
-        model = build_model()
-        result = model.fit(X_train[train], y_train[train], epochs=100, batch_size = len(X_train[train]), verbose=1, shuffle=False)
-        val_res = scaler_y.inverse_transform(model.predict(X_train[test]))
-        # print(val_res[0:10], labels[test][0:10])
-        # print(floor_area)
-        score = get_score(val_res * floor_area[test], total_price[test])
-        cvscores.append(score)
-    print(cvscores)
-    
-    # model = KerasClassifier(build_fn=build_model, verbose=1)
-    # param_grid = dict(epochs=[20,50,100],
-    #               batch_size=[1000,5000,len(X_train)],
-    #             #   solver=['svd', 'cholesky', 'lsqr', 'sag'],
-    #               optimizer= ['rmsprop', 'adam'],
-    #               init= ['glorot_uniform', 'normal', 'uniform']
-    #             #   penalty=['l1', 'l2']
-    #             )
-    # search = GridSearchCV(estimator=model, param_grid=param_grid, scoring='neg_root_mean_squared_error', n_jobs=-1, cv=cv)
+    # fine_tune
+    fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
 
-    # for train, test in cv.split(X_train,y_train):
-    #     model = build_model()
-    #     result = model.fit(X_train[train], y_train[train], epochs=100, batch_size = len(X_train[train]), verbose=1, shuffle=False)
-    #     val_res = scaler_y.inverse_transform(predict(X_train[test], model))
-    #     print(val_res[0:10], labels[test][0:10])
-    #     score = get_score(val_res, labels[test])
-    #     cvscores.append(score)
-    
+''' after fine tuning
+    # train on all training data with best hyper-params
+    model = build_model()
+    result = model.fit(X_train, y_train, epochs=100, batch_size = len(X_train), verbose=1, shuffle=False)
 
-    # # read in test data
-    # test = pd.read_csv('data_for_model/test_data.csv')
-    # test['town'] = LE.fit_transform(test['town']) 
-    # test['flat_model'] = LE.fit_transform(test['flat_model'])
-    # labels_val = test.iloc[:,19:20].values
-    # features_val = test.iloc[:,:19].values
+    # read in test data
+    test = pd.read_csv('data_for_model/test_data.csv')
+    test['town'] = LB.fit_transform(test['town']) 
+    test['flat_model'] = LB.fit_transform(test['flat_model'])
+    labels_test = test.iloc[:,20:].values
+    total_price_test = test.iloc[:,19:20].values
+    features_test = test.iloc[:,:19].values
+    floor_area_test = np.asarray(test['floor_area_sqm'].values).reshape(len(labels_test),1)
 
-    # # preprocess test data
-    # X_val = preprocessing_X(features_val)
-    # scaler_y, y_val = preprocessing_Y(labels_val)
+    # preprocess test data
+    X_test = preprocessing_X(features_test)
+    scaler_y, y_test = preprocessing_Y(labels_test)
 
-    # # predict y values for test data
-    # val_res = scaler_y.inverse_transform(predict(X_val, search))
+    # predict y values for test data
+    val_res = scaler_y.inverse_transform(model.predict(X_test))
 
-    # # get performance score on test data
-    # score = get_score(val_res, labels_val)
-    # print('score on test = {}'.format(score))
+    # get performance score on test data
+    score = get_score(val_res * floor_area_test, total_price_test)
+    print('score on test = {}'.format(score))
+'''
 
 if __name__ == "__main__":
     main()
