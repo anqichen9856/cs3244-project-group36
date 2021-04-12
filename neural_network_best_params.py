@@ -63,7 +63,7 @@ def get_score(y_pred, y_val):
 
 def main():
     # read data for train
-    train = pd.read_csv('training_data.csv')
+    train = pd.read_csv('data_for_model/new_with_price_per_sqm/training_data.csv')
     LB = LabelBinarizer()
     train['town'] = LB.fit_transform(train['town']) 
     train['flat_model'] = LB.fit_transform(train['flat_model'])
@@ -74,18 +74,10 @@ def main():
 
     # preprocess training data
     X_train = preprocessing_X(features)
-    scaler_y, y_train = preprocessing_Y(labels)
-
-    # fine_tune
-    fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
-
-''' after fine tuning
-    # train on all training data with best hyper-params
-    model = build_model()
-    result = model.fit(X_train, y_train, epochs=100, batch_size = len(X_train), verbose=1, shuffle=False)
+    scaler_y_train, y_train = preprocessing_Y(labels)
 
     # read in test data
-    test = pd.read_csv('data_for_model/test_data.csv')
+    test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
     test['town'] = LB.fit_transform(test['town']) 
     test['flat_model'] = LB.fit_transform(test['flat_model'])
     labels_test = test.iloc[:,20:].values
@@ -95,17 +87,37 @@ def main():
 
     # preprocess test data
     X_test = preprocessing_X(features_test)
-    scaler_y, y_test = preprocessing_Y(labels_test)
+    scaler_y_test, y_test = preprocessing_Y(labels_test)
+
+    # fine_tune
+    # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
+
+    # train on all training data with best hyper-params
+    model = build_model()
+    result = model.fit(X_train, y_train, epochs=300, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
+
+    # get score for validation
+    score = get_score(scaler_y_train.inverse_transform(model.predict(X_train)) * floor_area, total_price)
+    print('score on validation = {}'.format(score))
 
     # predict y values for test data
-    val_res = scaler_y.inverse_transform(model.predict(X_test))
+    val_res = scaler_y_test.inverse_transform(model.predict(X_test))
 
     # get performance score on test data
     score = get_score(val_res * floor_area_test, total_price_test)
+    # score = get_score(val_res, total_price_test)
     print('score on test = {}'.format(score))
-'''
+
+    '''
+    current best 
+    1. on price/sqm
+    score on validation = 0.13425226463511938
+    score on test = 0.13700108057884386 
+    2. on total price
+    score on validation = 0.13950871271685533
+    score on test = 0.14417668489260577
+    '''
+
 
 if __name__ == "__main__":
     main()
-
-
