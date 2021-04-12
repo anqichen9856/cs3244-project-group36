@@ -93,7 +93,7 @@ def main():
 
     print('Computing partial dependence plots...')
     tic = time()
-    pdp_features = [5, 10, 16, 18] # remaining_lease, dist_nearest_mrt, dist_nearest_supermarkets, dist_nearest_sports_facilities
+    pdp_features = [5, 10] # remaining_lease, dist_nearest_mrt, dist_nearest_supermarkets, dist_nearest_sports_facilities
     display = plot_partial_dependence(estimator=model, X=X_train, features=pdp_features,
         kind='average', subsample=25, random_state=0, verbose=10)
     print(f"done in {time() - tic:.3f}s")

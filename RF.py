@@ -74,6 +74,8 @@ print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(y_test_1/10
 regressor_2 = RandomForestRegressor(n_estimators=20, random_state=0)
 regressor_2.fit(X, y_2)
 
+
+
 # CV 
 kfold = KFold(n_splits=5, shuffle=True)
 kf_cv_scores = cross_val_score(regressor_2, X, y_2, cv=kfold, scoring='neg_mean_squared_error')
