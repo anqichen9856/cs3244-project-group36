@@ -3,11 +3,8 @@ import tensorflow as tf
 from tensorflow import keras
 import pandas as pd
 
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.model_selection import RepeatedKFold
-from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder
+from sklearn.model_selection import RepeatedKFold,GridSearchCV
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
@@ -71,9 +68,9 @@ def get_rmse_score(y_pred, y_val):
 def main():
     # read data for train
     train = pd.read_csv('data_for_model/new_with_price_per_sqm/training_data.csv')
-    LB = LabelBinarizer()
-    train['town'] = LB.fit_transform(train['town']) 
-    train['flat_model'] = LB.fit_transform(train['flat_model'])
+    LE = LabelEncoder()
+    train['town'] = LE.fit_transform(train['town']) 
+    train['flat_model'] = LE.fit_transform(train['flat_model'])
     labels = train.iloc[:,20:].values
     total_price = train.iloc[:,19:20].values
     features = train.iloc[:,:19].values
@@ -85,8 +82,8 @@ def main():
 
     # read in test data
     test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
-    test['town'] = LB.fit_transform(test['town']) 
-    test['flat_model'] = LB.fit_transform(test['flat_model'])
+    test['town'] = LE.fit_transform(test['town']) 
+    test['flat_model'] = LE.fit_transform(test['flat_model'])
     labels_test = test.iloc[:,20:].values
     total_price_test = test.iloc[:,19:20].values
     features_test = test.iloc[:,:19].values
@@ -98,7 +95,7 @@ def main():
 
     # fine_tune
     # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
-
+    
     # train on all training data with best hyper-params
     model = build_model()
     result = model.fit(X_train, y_train, epochs=400, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
@@ -121,6 +118,7 @@ def main():
     print('mse score on test = {}'.format(mse))
     rmse = get_rmse_score(y_pred * floor_area_test, total_price_test)
     print('rmse score on test = {}'.format(rmse))
+    
 
     '''
     current best 

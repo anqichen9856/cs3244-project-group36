@@ -4,8 +4,7 @@ from tensorflow import keras
 import pandas as pd
 
 from sklearn.datasets import dump_svmlight_file
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import RepeatedKFold
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -48,9 +47,9 @@ def get_rmse_score(y_pred, y_val):
 def main():
     # read data for train
     train = pd.read_csv('data_for_model/new_with_price_per_sqm/training_data.csv')
-    LB = LabelBinarizer()
-    train['town'] = LB.fit_transform(train['town']) 
-    train['flat_model'] = LB.fit_transform(train['flat_model'])
+    LE = LabelEncoder()
+    train['town'] = LE.fit_transform(train['town']) 
+    train['flat_model'] = LE.fit_transform(train['flat_model'])
     labels = train.iloc[:,20:].values
     total_price = train.iloc[:,19:20].values
     features = train.iloc[:,:19].values
@@ -62,8 +61,8 @@ def main():
 
     # read in test data
     test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
-    test['town'] = LB.fit_transform(test['town']) 
-    test['flat_model'] = LB.fit_transform(test['flat_model'])
+    test['town'] = LE.fit_transform(test['town']) 
+    test['flat_model'] = LE.fit_transform(test['flat_model'])
     labels_test = test.iloc[:,20:].values
     total_price_test = test.iloc[:,19:20].values
     features_test = test.iloc[:,:19].values
