@@ -35,10 +35,12 @@ def preprocessing_Y(mtx):
 
 def build_model():
     model = Sequential()
-    model.add(Dense(19, input_dim=19, kernel_initializer='normal',activation='relu'))
-    model.add(Dense(18, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(1, kernel_initializer='normal', activation='linear'))    
-    model.compile(loss='mse', optimizer='adam', metrics=['mse','mae'])
+    model.add(Dense(100, input_dim=19, kernel_initializer='normal',activation='selu'))
+    model.add(Dense(90, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(80, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(1, kernel_initializer='orthogonal', activation='linear'))    
+    optimizer = tf.keras.optimizers.Adam()
+    model.compile(loss='mse', optimizer=optimizer, metrics=['mse','mae'])
     return model
 
 def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):

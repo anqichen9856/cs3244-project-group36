@@ -30,10 +30,12 @@ def preprocessing_Y(mtx):
 
 def build_model():
     model = Sequential()
-    model.add(Dense(19, input_dim=19, kernel_initializer='normal',activation='relu'))
-    model.add(Dense(18, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(1, kernel_initializer='normal', activation='linear'))    
-    model.compile(loss='mse', optimizer='adam', metrics=['mse','mae'])
+    model.add(Dense(100, input_dim=19, kernel_initializer='normal',activation='selu'))
+    model.add(Dense(90, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(80, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(1, kernel_initializer='orthogonal', activation='linear'))    
+    optimizer = tf.keras.optimizers.Adam()
+    model.compile(loss='mse', optimizer=optimizer, metrics=['mse','mae'])
     return model
 
 def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):
@@ -75,6 +77,8 @@ def main():
     # preprocess training data
     X_train = preprocessing_X(features)
     scaler_y_train, y_train = preprocessing_Y(labels)
+    # X_train = features
+    # y_train = labels
 
     # read in test data
     test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
@@ -88,20 +92,24 @@ def main():
     # preprocess test data
     X_test = preprocessing_X(features_test)
     scaler_y_test, y_test = preprocessing_Y(labels_test)
+    # X_test = features_test
+    # y_test = labels_test
 
     # fine_tune
     # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
 
     # train on all training data with best hyper-params
     model = build_model()
-    result = model.fit(X_train, y_train, epochs=300, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
+    result = model.fit(X_train, y_train, epochs=500, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
 
     # get score for validation
     score = get_score(scaler_y_train.inverse_transform(model.predict(X_train)) * floor_area, total_price)
+    # score = get_score(model.predict(X_train) * floor_area, total_price)
     print('score on validation = {}'.format(score))
 
     # predict y values for test data
     val_res = scaler_y_test.inverse_transform(model.predict(X_test))
+    # val_res = model.predict(X_test)
 
     # get performance score on test data
     score = get_score(val_res * floor_area_test, total_price_test)
