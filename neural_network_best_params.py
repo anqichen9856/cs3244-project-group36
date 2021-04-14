@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import RepeatedKFold
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
 from keras.layers import Dense
@@ -34,22 +34,21 @@ def build_model():
     model.add(Dense(90, kernel_initializer='normal', activation='relu'))
     model.add(Dense(80, kernel_initializer='normal', activation='relu'))
     model.add(Dense(1, kernel_initializer='orthogonal', activation='linear'))    
-    optimizer = tf.keras.optimizers.Adam()
-    model.compile(loss='mse', optimizer=optimizer, metrics=['mse','mae'])
+    model.compile(loss='mse', optimizer='adam', metrics=['mse','mae'])
     return model
 
-def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):
-    cv = RepeatedKFold(n_splits=5, n_repeats=1, random_state=0)
-    cvscores = []
-    for train, test in cv.split(X_train,y_train):
-        model = build_model()
-        result = model.fit(X_train[train], y_train[train], epochs=300, batch_size = int(len(X_train[train])/256), verbose=1, shuffle=False)
-        val_res = scaler_y.inverse_transform(model.predict(X_train[test]))
-        # print(val_res[0:10], labels[test][0:10])
-        # print(floor_area)
-        score = get_score(val_res * floor_area[test], total_price[test])
-        cvscores.append(score)
-    print('avarage score on cv = {}'.format(sum(cvscores)/len(cvscores)))
+# def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):
+#     cv = RepeatedKFold(n_splits=5, n_repeats=1, random_state=0)
+#     cvscores = []
+#     for train, test in cv.split(X_train,y_train):
+#         model = build_model()
+#         result = model.fit(X_train[train], y_train[train], epochs=500, batch_size = int(len(X_train[train])/256), verbose=1, shuffle=False)
+#         val_res = scaler_y.inverse_transform(model.predict(X_train[test]))
+#         # print(val_res[0:10], labels[test][0:10])
+#         # print(floor_area)
+#         score = get_score(val_res * floor_area[test], total_price[test])
+#         cvscores.append(score)
+#     print('avarage score on cv = {}'.format(sum(cvscores)/len(cvscores)))
     
     # for train, test in cv.split(X_train,y_train):
     #     model = build_model()
@@ -60,8 +59,14 @@ def fine_tune(X_train, y_train, scaler_y, floor_area, total_price):
     #     cvscores.append(score)
     
 
-def get_score(y_pred, y_val):
-    return mean_squared_error(y_pred/100000, y_val/100000)
+def get_mse_score(y_pred, y_val):
+    return mean_squared_error(y_pred/10000, y_val/10000)
+
+def get_mae_score(y_pred, y_val):
+    return mean_absolute_error(y_pred/10000, y_val/10000)
+
+def get_rmse_score(y_pred, y_val):
+    return mean_squared_error(y_pred/10000, y_val/10000, squared=False)
 
 def main():
     # read data for train
@@ -77,8 +82,6 @@ def main():
     # preprocess training data
     X_train = preprocessing_X(features)
     scaler_y_train, y_train = preprocessing_Y(labels)
-    # X_train = features
-    # y_train = labels
 
     # read in test data
     test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
@@ -92,29 +95,32 @@ def main():
     # preprocess test data
     X_test = preprocessing_X(features_test)
     scaler_y_test, y_test = preprocessing_Y(labels_test)
-    # X_test = features_test
-    # y_test = labels_test
 
     # fine_tune
     # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
 
     # train on all training data with best hyper-params
     model = build_model()
-    result = model.fit(X_train, y_train, epochs=500, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
+    result = model.fit(X_train, y_train, epochs=400, batch_size = int(len(X_train)/256), verbose=1, shuffle=False)
 
-    # get score for validation
-    score = get_score(scaler_y_train.inverse_transform(model.predict(X_train)) * floor_area, total_price)
-    # score = get_score(model.predict(X_train) * floor_area, total_price)
-    print('score on validation = {}'.format(score))
-
-    # predict y values for test data
-    val_res = scaler_y_test.inverse_transform(model.predict(X_test))
-    # val_res = model.predict(X_test)
-
-    # get performance score on test data
-    score = get_score(val_res * floor_area_test, total_price_test)
-    # score = get_score(val_res, total_price_test)
-    print('score on test = {}'.format(score))
+    # get scores for validation
+    # y_valiadation = model.predict(train_dmatrix).reshape(len(labels),1)
+    y_valiadation = scaler_y_train.inverse_transform(model.predict(X_train))
+    mae = get_mae_score(y_valiadation * floor_area, total_price)    
+    print('mae score on validation = {}'.format(mae))
+    mse = get_mse_score(y_valiadation * floor_area, total_price)
+    print('mse score on validation = {}'.format(mse))
+    rmse = get_rmse_score(y_valiadation * floor_area, total_price)
+    print('rmse score on validation = {}'.format(rmse))
+    
+    # get score for test 
+    y_pred = scaler_y_test.inverse_transform(model.predict(X_test))
+    mae = get_mae_score(y_pred * floor_area_test, total_price_test)    
+    print('mae score on test = {}'.format(mae))
+    mse = get_mse_score(y_pred * floor_area_test, total_price_test)
+    print('mse score on test = {}'.format(mse))
+    rmse = get_rmse_score(y_pred * floor_area_test, total_price_test)
+    print('rmse score on test = {}'.format(rmse))
 
     '''
     current best 
