@@ -15,8 +15,8 @@ from keras.layers import Dense
 from numpy.random import seed
 import xgboost
 
-seed(0)
-tf.random.set_seed(0)
+seed(42)
+tf.random.set_seed(42)
 
 # def build_model():
 #     model = xgboost.XGBRegressor(n_estimators=1000, max_depth=7, eta=0.1, subsample=1, colsample_bytree=1)
@@ -58,7 +58,7 @@ def main():
 
     X_train = features
     y_train = labels
-    train_dmatrix = xgboost.DMatrix(data = X_train, label = y_train)
+    # train_dmatrix = xgboost.DMatrix(data = X_train, label = y_train)
 
     # read in test data
     test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
@@ -71,19 +71,21 @@ def main():
 
     X_test = features_test
     y_test = labels_test
-    test_dmatrix = xgboost.DMatrix(data = X_test, label = y_test)
+    # test_dmatrix = xgboost.DMatrix(data = X_test, label = y_test)
 
     # fine_tune
     # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
 
     # build model and train
     param = {"booster":"gblinear", "objective":"reg:linear"}
-    model = xgboost.train(params = param, dtrain = train_dmatrix, num_boost_round = 500)
-    # model = xgboost.XGBRegressor(n_estimators=1000, max_depth=7, eta=0.1, subsample=0.7, colsample_bytree=0.8)
+    # model = xgboost.train(params = param, dtrain = train_dmatrix, num_boost_round = 500)
+    model = xgboost.XGBRegressor(n_estimators=1000, max_depth=7, eta=0.1, subsample=0.7, colsample_bytree=0.8)
+    model.fit(X_train, y_train)
     print("finish building model")
 
     # get scores for validation
-    y_valiadation = model.predict(train_dmatrix).reshape(len(labels),1)
+    # y_valiadation = model.predict(train_dmatrix).reshape(len(labels),1)
+    y_valiadation = model.predict(X_train).reshape(len(labels),1)
     mae = get_mae_score(y_valiadation * floor_area, total_price)    
     print('mae score on validation = {}'.format(mae))
     mse = get_mse_score(y_valiadation * floor_area, total_price)
@@ -92,7 +94,7 @@ def main():
     print('rmse score on validation = {}'.format(rmse))
     
     # get score for test 
-    y_pred = model.predict(test_dmatrix).reshape(len(labels_test),1)
+    y_pred = model.predict(X_test).reshape(len(labels_test),1)
     mae = get_mae_score(y_pred * floor_area_test, total_price_test)    
     print('mae score on test = {}'.format(mae))
     mse = get_mse_score(y_pred * floor_area_test, total_price_test)
