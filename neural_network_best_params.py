@@ -100,7 +100,7 @@ def main():
     l4.columns = list(range(26,46))
     test = test.join(l4)
 
-    labels = train['price_per_sqm'].values
+    labels = train['resale_price'].values
     labels = np.asarray(labels).reshape(len(labels),1)
     total_price = np.asarray(train['resale_price'].values).reshape(len(labels),1)
     features = train.drop(columns=['town', 'flat_model','resale_price','price_per_sqm'])
@@ -112,7 +112,7 @@ def main():
 
     # read in test data
     
-    labels_test = test['price_per_sqm'].values
+    labels_test = test['resale_price'].values
     labels_test = np.asarray(labels_test).reshape(len(labels_test),1)
     total_price_test = np.asarray(test['resale_price'].values).reshape(len(labels_test),1)
     features_test = test.drop(columns=['town', 'flat_model','resale_price','price_per_sqm'])
@@ -122,45 +122,43 @@ def main():
     X_test = scaler_x.transform(features_test)
     y_test = scaler_y.transform(labels_test)
 
-    # fine_tune
     # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
     
     # train on all training data with best hyper-params
-    # model = build_model()
-    model = build_simple_model()
-    # result = model.fit(X_train, y_train, epochs=300, batch_size=256, verbose=1, shuffle=False)
-    result = model.fit(X_train, y_train, epochs=100)
+    model = build_model()
+    # model = build_simple_model()
+    result = model.fit(X_train, y_train, epochs=300, batch_size=256, verbose=1, shuffle=False)
+    # result = model.fit(X_train, y_train, epochs=100)
 
     # get scores for validation
-    # y_valiadation = model.predict(train_dmatrix).reshape(len(labels),1)
     y_valiadation = scaler_y.inverse_transform(model.predict(X_train))
-    mae = get_mae_score(y_valiadation * floor_area, total_price)
-    print('mae score on validation = {}'.format(mae))
-    mse = get_mse_score(y_valiadation * floor_area, total_price)
-    print('mse score on validation = {}'.format(mse))
-    rmse = get_rmse_score(y_valiadation * floor_area, total_price)
-    print('rmse score on validation = {}'.format(rmse))
-    # mae = get_mae_score(y_valiadation, total_price)
+    # mae = get_mae_score(y_valiadation * floor_area, total_price)
     # print('mae score on validation = {}'.format(mae))
-    # mse = get_mse_score(y_valiadation, total_price)
+    # mse = get_mse_score(y_valiadation * floor_area, total_price)
     # print('mse score on validation = {}'.format(mse))
-    # rmse = get_rmse_score(y_valiadation, total_price)
+    # rmse = get_rmse_score(y_valiadation * floor_area, total_price)
     # print('rmse score on validation = {}'.format(rmse))
+    mae = get_mae_score(y_valiadation, total_price)
+    print('mae score on validation = {}'.format(mae))
+    mse = get_mse_score(y_valiadation, total_price)
+    print('mse score on validation = {}'.format(mse))
+    rmse = get_rmse_score(y_valiadation, total_price)
+    print('rmse score on validation = {}'.format(rmse))
     
     # get score for test 
     y_pred = scaler_y.inverse_transform(model.predict(X_test))
-    mae = get_mae_score(y_pred * floor_area_test, total_price_test)    
-    print('mae score on test = {}'.format(mae))
-    mse = get_mse_score(y_pred * floor_area_test, total_price_test)
-    print('mse score on test = {}'.format(mse))
-    rmse = get_rmse_score(y_pred * floor_area_test, total_price_test)
-    print('rmse score on test = {}'.format(rmse))
-    # mae = get_mae_score(y_pred, total_price_test)    
+    # mae = get_mae_score(y_pred * floor_area_test, total_price_test)    
     # print('mae score on test = {}'.format(mae))
-    # mse = get_mse_score(y_pred, total_price_test)
+    # mse = get_mse_score(y_pred * floor_area_test, total_price_test)
     # print('mse score on test = {}'.format(mse))
-    # rmse = get_rmse_score(y_pred, total_price_test)
+    # rmse = get_rmse_score(y_pred * floor_area_test, total_price_test)
     # print('rmse score on test = {}'.format(rmse))
+    mae = get_mae_score(y_pred, total_price_test)    
+    print('mae score on test = {}'.format(mae))
+    mse = get_mse_score(y_pred, total_price_test)
+    print('mse score on test = {}'.format(mse))
+    rmse = get_rmse_score(y_pred, total_price_test)
+    print('rmse score on test = {}'.format(rmse))
     
 
     '''
