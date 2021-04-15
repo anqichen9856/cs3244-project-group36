@@ -79,8 +79,8 @@ def main():
     param = {"booster":"gblinear", "objective":"reg:linear"}
     # model = xgboost.train(params = param, dtrain = train_dmatrix, num_boost_round = 500)
     model = xgboost.XGBRegressor(
-        n_estimators=1000, max_depth=7, eta=0.1, subsample=0.7, colsample_bytree=0.8, learning_rate=0.01,
-        booster='gblinear'
+        n_estimators=1000, max_depth=7, eta=0.1, subsample=0.7, colsample_bytree=0.8, learning_rate=0.08,
+        # booster='gblinear' # cannot use
         # booster='gbtree'
         # eta: Typical final values to be used: 0.01-0.2
         # max_depth: Typical values: 3-10
@@ -89,7 +89,7 @@ def main():
     )
     model.fit(X_train, y_train)
     print("finish building model")
-
+ 
     # get scores for validation
     # y_valiadation = model.predict(train_dmatrix).reshape(len(labels),1)
     y_valiadation = model.predict(X_train).reshape(len(labels),1)

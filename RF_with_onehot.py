@@ -6,7 +6,7 @@
 
 import pandas as pd
 df_train = pd.read_csv('training_data.csv')
-df_test =  pd.read_csv('test_data.csv')
+df_test = pd.read_csv('test_data.csv')
 
 
 # In[2]:
