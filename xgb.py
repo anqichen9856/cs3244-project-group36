@@ -4,7 +4,7 @@ from tensorflow import keras
 import pandas as pd
 
 from sklearn.datasets import dump_svmlight_file
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.model_selection import RepeatedKFold
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -45,35 +45,51 @@ def get_rmse_score(y_pred, y_val):
     return mean_squared_error(y_pred/100000, y_val/100000, squared=False)
 
 def main():
-    # read data for train
+   # read data
     train = pd.read_csv('data_for_model/new_with_price_per_sqm/training_data.csv')
-    LE = LabelEncoder()
-    train['town'] = LE.fit_transform(train['town']) 
-    train['flat_model'] = LE.fit_transform(train['flat_model'])
-    labels = train.iloc[:,20:].values
-    total_price = train.iloc[:,19:20].values
-    features = train.iloc[:,:19].values
+    test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
+    
+    LE1 = LabelEncoder()
+    train['town'] = LE1.fit_transform(train['town']) 
+    test['town'] = LE1.transform(test['town']) 
+
+    LE2 = LabelEncoder()
+    train['flat_model'] = LE2.fit_transform(train['flat_model'])
+    test['flat_model'] = LE2.transform(test['flat_model'])
+
+    OHE1 = OneHotEncoder(handle_unknown='ignore')
+    l1 = pd.DataFrame(OHE1.fit_transform(train[['town']]).toarray())
+    train = train.join(l1)
+    l2 = pd.DataFrame(OHE1.transform(test[['town']]).toarray())
+    test = test.join(l2)
+
+    OHE2 = OneHotEncoder(handle_unknown='ignore')
+    l3 = pd.DataFrame(OHE2.fit_transform(train[['flat_model']]).toarray())
+    l3.columns = list(range(26,46))
+    train = train.join(l3)
+    l4 = pd.DataFrame(OHE2.transform(test[['flat_model']]).toarray())
+    l4.columns = list(range(26,46))
+    test = test.join(l4)
+
+    labels = train['price_per_sqm'].values
+    labels = np.asarray(labels).reshape(len(labels),1)
+    total_price = np.asarray(train['resale_price'].values).reshape(len(labels),1)
+    features = train.drop(columns=['town', 'flat_model','resale_price','price_per_sqm'])
     floor_area = np.asarray(train['floor_area_sqm'].values).reshape(len(labels),1)
+
+    labels_test = test['price_per_sqm'].values
+    labels_test = np.asarray(labels_test).reshape(len(labels_test),1)
+    total_price_test = np.asarray(test['resale_price'].values).reshape(len(labels_test),1)
+    features_test = test.drop(columns=['town', 'flat_model','resale_price','price_per_sqm'])
+    floor_area_test = np.asarray(test['floor_area_sqm'].values).reshape(len(labels_test),1)
 
     X_train = features
     y_train = labels
     # train_dmatrix = xgboost.DMatrix(data = X_train, label = y_train)
 
-    # read in test data
-    test = pd.read_csv('data_for_model/new_with_price_per_sqm/test_data.csv')
-    test['town'] = LE.fit_transform(test['town']) 
-    test['flat_model'] = LE.fit_transform(test['flat_model'])
-    labels_test = test.iloc[:,20:].values
-    total_price_test = test.iloc[:,19:20].values
-    features_test = test.iloc[:,:19].values
-    floor_area_test = np.asarray(test['floor_area_sqm'].values).reshape(len(labels_test),1)
-
     X_test = features_test
     y_test = labels_test
     # test_dmatrix = xgboost.DMatrix(data = X_test, label = y_test)
-
-    # fine_tune
-    # fine_tune(X_train, y_train, scaler_y, floor_area, total_price)
 
     # build model and train
     param = {"booster":"gblinear", "objective":"reg:linear"}
